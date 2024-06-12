@@ -5,11 +5,13 @@ from typing import List
 
 from app.models.teams_profile import TeamsProfile
 from app.models.team_player import TeamPlayer
-
 from app.repos.teams_profile import insert_team_profile, fetch_all_teams
-from app.repos.team_players import insert_team_players as repo_insert_team
+from app.repos.team_players import (
+    insert_team_players as repo_insert_team,
+    fetch_player_by_api_id,
+)
+from app.db_context import API_KEY
 
-API_KEY = "QRIw08tTmh5eOtehVHnz59j7V5FUB7L55we4yoTX"
 
 router = APIRouter(prefix="/api", tags=["Team and Players General"])
 
@@ -52,6 +54,11 @@ async def fetch_all_nfl_teams_from_db():
 
     all_teams = await fetch_all_teams()
     return all_teams
+
+
+@router.get("/team_player/{api_id}")
+async def fetch_player_by_api_id(api_id):
+    return fetch_player_by_api_id(api_id)
 
 
 @router.post("team_player/{id}")

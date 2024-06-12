@@ -16,3 +16,11 @@ def insert_team_players(team_players: List[TeamPlayer]):
             raise Exception
 
         return "success"
+
+
+async def fetch_player_by_api_id(api_id: str):
+    with sessionmaker.begin() as session:
+        session.expire_on_commit = False
+        return (
+            session.query(TeamPlayer).where(TeamPlayer.player_api_id == api_id).first()
+        )

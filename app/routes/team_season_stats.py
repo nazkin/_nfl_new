@@ -3,8 +3,7 @@ from fastapi import APIRouter
 from app.routes.team_and_players_general import fetch_all_nfl_teams_from_db
 from app.models.team_season_statistics import TeamSeasonStats
 from app.repos.team_season_stats import bulk_insert_all_teams_season_stats
-
-from app.routes.seasons import API_KEY
+from app.db_context import API_KEY
 
 
 router = APIRouter(prefix="/api", tags=["TeamSeasonStats"])
@@ -30,15 +29,22 @@ async def fetch_team_season_stats(season_year: int, season_type: str):
         team_stats = dict(response.json())
         team_stats["db_team_id"] = team_id_db
         team_stats["team_api_id"] = team_api_id
-        # Team Stats
-        ts = team_stats["record"]
+        # Team Stats for the season
+        ts = team_stats.get("record")
+
+        if not ts:
+            print(
+                f"Team {team.name} did not make it to playoffs during {season_year} or has no stats for this {season_type} season"
+            )
+            continue
+        # season stats for the team against opponents
         team_stats_for = TeamSeasonStats(
             team_id=team_id_db,
             team_api_id=team_api_id,
             season_type=season_type,
             season_year=season_year,
-            isoponentstats=False,
-            games_played=ts.get("games_played"),
+            is_opponent_stats=False,
+            games_played=ts["games_played"],
             touchdown_passes=ts["touchdowns"].get("pass"),
             touchdown_rushes=ts["touchdowns"].get("rush"),
             touchdown_total_return=ts["touchdowns"].get("total_return"),
@@ -75,24 +81,6 @@ async def fetch_team_season_stats(season_year: int, season_type: str):
             receiving_dropped_passes=ts["receiving"].get("dropped_passes"),
             receiving_catchable_passes=ts["receiving"].get("catchable_passes"),
             receiving_yards_after_contact=ts["receiving"].get("yards_after_contact"),
-            punts_attempts=ts["punts"].get("attempts"),
-            punts_yards=ts["punts"].get("yards"),
-            punts_net_yards=ts["punts"].get("net_yards"),
-            punts_blocked=ts["punts"].get("blocked"),
-            punts_touchbacks=ts["punts"].get("touchbacks"),
-            punts_inside_20=ts["punts"].get("inside_20"),
-            punts_return_yards=ts["punts"].get("return_yards"),
-            punts_avg_net_yards=ts["punts"].get("avg_net_yards"),
-            punts_avg_yards=ts["punts"].get("avg_yards"),
-            punts_longest=ts["punts"].get("longest"),
-            punts_hang_time=ts["punts"].get("hang_time"),
-            punts_avg_hang_time=ts["punts"].get("avg_hang_time"),
-            punt_returns_avg_yards=ts["punt_returns"].get("avg_yards"),
-            punt_returns_yards=ts["punt_returns"].get("yards"),
-            punt_returns_longest=ts["punt_returns"].get("longest"),
-            punt_returns_touchdowns=ts["punt_returns"].get("touchdowns"),
-            punt_returns_longest_touchdown=ts["punt_returns"].get("longest_touchdown"),
-            punt_returns_faircatches=ts["punt_returns"].get("faircatches"),
             penalties_penalties=ts["penalties"].get("penalties"),
             penalties_yards=ts["penalties"].get("yards"),
             passing_attempts=ts["passing"].get("attempts"),
@@ -134,54 +122,10 @@ async def fetch_team_season_stats(season_year: int, season_type: str):
             kickoffs_onside_successes=ts["kickoffs"].get("onside_attempts"),
             kickoffs_onside_attempts=ts["kickoffs"].get("onside_successes"),
             kickoffs_squib_kicks=ts["kickoffs"].get("squib_kicks"),
-            kick_returns_avg_yards=ts["kick_returns"].get("avg_yards"),
-            kick_returns_yards=ts["kick_returns"].get("yards"),
-            kick_returns_longest=ts["kick_returns"].get("longest"),
-            kick_returns_touchdowns=ts["kick_returns"].get("touchdowns"),
-            kick_returns_longest_touchdown=ts["kick_returns"].get("longest_touchdown"),
-            kick_returns_faircatches=ts["kick_returns"].get("faircatches"),
-            kick_returns_returns=ts["kick_returns"].get("returns"),
-            interceptions_return_yards=ts["interceptions"].get("return_yards"),
-            interceptions_returned=ts["interceptions"].get("returned"),
-            interceptions_interceptions=ts["interceptions"].get("interceptions"),
-            int_returns_avg_yards=ts["int_returns"].get("avg_yards"),
-            int_returns_yards=ts["int_returns"].get("yards"),
-            int_returns_longest=ts["int_returns"].get("longest"),
-            int_returns_touchdowns=ts["int_returns"].get("touchdowns"),
-            int_returns_longest_touchdown=ts["int_returns"].get("longest_touchdown"),
-            int_returns_returns=ts["int_returns"].get("returns"),
-            fumbles_fumbles=ts["fumbles"].get("fumbles"),
-            fumbles_lost_fumbles=ts["fumbles"].get("lost_fumbles"),
-            fumbles_own_rec=ts["fumbles"].get("own_rec"),
-            fumbles_own_rec_yards=ts["fumbles"].get("own_rec_yards"),
-            fumbles_opp_rec=ts["fumbles"].get("opp_rec"),
-            fumbles_out_of_bounds=ts["fumbles"].get("out_of_bounds"),
-            fumbles_forced_fumbles=ts["fumbles"].get("forced_fumbles"),
-            fumbles_own_rec_tds=ts["fumbles"].get("own_rec_tds"),
-            fumbles_opp_rec_tds=ts["fumbles"].get("opp_rec_tds"),
-            fumbles_ez_rec_tds=ts["fumbles"].get("ez_rec_tds"),
             first_downs_pass=ts["first_downs"].get("pass"),
             first_downs_penalty=ts["first_downs"].get("penalty"),
             first_downs_rush=ts["first_downs"].get("rush"),
             first_downs_total=ts["first_downs"].get("total"),
-            field_goals_attempts=ts["field_goals"].get("attempts"),
-            field_goals_made=ts["field_goals"].get("made"),
-            field_goals_blocked=ts["field_goals"].get("blocked"),
-            field_goals_yards=ts["field_goals"].get("yards"),
-            field_goals_avg_yards=ts["field_goals"].get("avg_yards"),
-            field_goals_longest=ts["field_goals"].get("longest"),
-            field_goals_missed=ts["field_goals"].get("missed"),
-            field_goals_pct=ts["field_goals"].get("pct"),
-            field_goals_attempts_19=ts["field_goals"].get("attempts_19"),
-            field_goals_attempts_29=ts["field_goals"].get("attempts_29"),
-            field_goals_attempts_39=ts["field_goals"].get("attempts_39"),
-            field_goals_attempts_49=ts["field_goals"].get("attempts_49"),
-            field_goals_attempts_50=ts["field_goals"].get("attempts_50"),
-            field_goals_made_19=ts["field_goals"].get("made_19"),
-            field_goals_made_29=ts["field_goals"].get("made_29"),
-            field_goals_made_39=ts["field_goals"].get("made_39"),
-            field_goals_made_49=ts["field_goals"].get("made_49"),
-            field_goals_made_50=ts["field_goals"].get("made_50"),
             defence_tackles=ts["defense"].get("tackles"),
             defence_assists=ts["defense"].get("assists"),
             defence_combined=ts["defense"].get("combined"),
@@ -213,31 +157,6 @@ async def fetch_team_season_stats(season_year: int, season_type: str):
             defence_batted_passes=ts["defense"].get("batted_passes"),
             defence_three_and_outs_forced=ts["defense"].get("three_and_outs_forced"),
             defence_fourth_down_stops=ts["defense"].get("fourth_down_stops"),
-            extra_points_kicks_attempts=ts["extra_points"]["kicks"].get("attempts"),
-            extra_points_kicks_blocked=ts["extra_points"]["kicks"].get("blocked"),
-            extra_points_kicks_made=ts["extra_points"]["kicks"].get("made"),
-            extra_points_kicks_pct=ts["extra_points"]["kicks"].get("pct"),
-            extra_points_conversions_pass_attempts=ts["extra_points"][
-                "conversions"
-            ].get("pass_attempts"),
-            extra_points_conversions_pass_successes=ts["extra_points"][
-                "conversions"
-            ].get("pass_successes"),
-            extra_points_conversions_rush_attempts=ts["extra_points"][
-                "conversions"
-            ].get("rush_attempts"),
-            extra_points_conversions_rush_successes=ts["extra_points"][
-                "conversions"
-            ].get("rush_successes"),
-            extra_points_conversions_defense_attempts=ts["extra_points"][
-                "conversions"
-            ].get("defense_attempts"),
-            extra_points_conversions_defense_successes=ts["extra_points"][
-                "conversions"
-            ].get("defense_successes"),
-            extra_points_conversions_turnover_successes=ts["extra_points"][
-                "conversions"
-            ].get("turnover_successes"),
             efficiency_goaltogo_attempts=ts["efficiency"]["goaltogo"].get("attempts"),
             efficiency_goaltogo_successes=ts["efficiency"]["goaltogo"].get("successes"),
             efficiency_goaltogo_pct=ts["efficiency"]["goaltogo"].get("pct"),
@@ -257,14 +176,245 @@ async def fetch_team_season_stats(season_year: int, season_type: str):
             ),
             efficiency_fourthdown_pct=ts["efficiency"]["fourthdown"].get("pct"),
         )
-        # Oponent Stats
+        # controlling for stats that might not exist during playoff games
+        if ts.get("interceptions"):
+            team_stats_for.interceptions_return_yards = ts.get("interceptions").get(
+                "return_yards"
+            )
+            team_stats_for.interceptions_returned = ts.get("interceptions").get(
+                "returned"
+            )
+            team_stats_for.interceptions_interceptions = ts.get("interceptions").get(
+                "interceptions"
+            )
+        else:
+            team_stats_for.interceptions_return_yards = None
+            team_stats_for.interceptions_returned = None
+            team_stats_for.interceptions_interceptions = None
+
+        if ts.get("int_returns"):
+            team_stats_for.int_returns_avg_yards = (ts["int_returns"].get("avg_yards"),)
+            team_stats_for.int_returns_yards = (ts["int_returns"].get("yards"),)
+            team_stats_for.int_returns_longest = (ts["int_returns"].get("longest"),)
+            team_stats_for.int_returns_touchdowns = (
+                ts["int_returns"].get("touchdowns"),
+            )
+            team_stats_for.int_returns_longest_touchdown = (
+                ts["int_returns"].get("longest_touchdown"),
+            )
+            team_stats_for.int_returns_returns = (ts["int_returns"].get("returns"),)
+        else:
+            team_stats_for.int_returns_avg_yards = None
+            team_stats_for.int_returns_yards = None
+            team_stats_for.int_returns_longest = None
+            team_stats_for.int_returns_touchdowns = None
+            team_stats_for.int_returns_longest_touchdown = None
+            team_stats_for.int_returns_returns = None
+
+        if ts.get("kick_returns"):
+            team_stats_for.kick_returns_avg_yards = (
+                ts["kick_returns"].get("avg_yards"),
+            )
+            team_stats_for.kick_returns_yards = (ts["kick_returns"].get("yards"),)
+            team_stats_for.kick_returns_longest = (ts["kick_returns"].get("longest"),)
+            team_stats_for.kick_returns_touchdowns = (
+                ts["kick_returns"].get("touchdowns"),
+            )
+            team_stats_for.kick_returns_longest_touchdown = (
+                ts["kick_returns"].get("longest_touchdown"),
+            )
+            team_stats_for.kick_returns_faircatches = (
+                ts["kick_returns"].get("faircatches"),
+            )
+            team_stats_for.kick_returns_returns = (ts["kick_returns"].get("returns"),)
+        else:
+            team_stats_for.kick_returns_avg_yards = None
+            team_stats_for.kick_returns_yards = None
+            team_stats_for.kick_returns_longest = None
+            team_stats_for.kick_returns_touchdowns = None
+            team_stats_for.kick_returns_longest_touchdown = None
+            team_stats_for.kick_returns_faircatches = None
+            team_stats_for.kick_returns_returns = None
+
+        if ts.get("fumbles"):
+            team_stats_for.fumbles_fumbles = (ts["fumbles"].get("fumbles"),)
+            team_stats_for.fumbles_lost_fumbles = (ts["fumbles"].get("lost_fumbles"),)
+            team_stats_for.fumbles_own_rec = (ts["fumbles"].get("own_rec"),)
+            team_stats_for.fumbles_own_rec_yards = (ts["fumbles"].get("own_rec_yards"),)
+            team_stats_for.fumbles_opp_rec = (ts["fumbles"].get("opp_rec"),)
+            team_stats_for.fumbles_out_of_bounds = (ts["fumbles"].get("out_of_bounds"),)
+            team_stats_for.fumbles_forced_fumbles = (
+                ts["fumbles"].get("forced_fumbles"),
+            )
+            team_stats_for.fumbles_own_rec_tds = (ts["fumbles"].get("own_rec_tds"),)
+            team_stats_for.fumbles_opp_rec_tds = (ts["fumbles"].get("opp_rec_tds"),)
+            team_stats_for.fumbles_ez_rec_tds = (ts["fumbles"].get("ez_rec_tds"),)
+        else:
+            team_stats_for.fumbles_fumbles = None
+            team_stats_for.fumbles_lost_fumbles = None
+            team_stats_for.fumbles_own_rec = None
+            team_stats_for.fumbles_own_rec_yards = None
+            team_stats_for.fumbles_opp_rec = None
+            team_stats_for.fumbles_out_of_bounds = None
+            team_stats_for.fumbles_forced_fumbles = None
+            team_stats_for.fumbles_own_rec_tds = None
+            team_stats_for.fumbles_opp_rec_tds = None
+            team_stats_for.fumbles_ez_rec_tds = None
+
+        if ts.get("field_goals"):
+            team_stats_for.field_goals_attempts = (ts["field_goals"].get("attempts"),)
+            team_stats_for.field_goals_made = (ts["field_goals"].get("made"),)
+            team_stats_for.field_goals_blocked = (ts["field_goals"].get("blocked"),)
+            team_stats_for.field_goals_yards = (ts["field_goals"].get("yards"),)
+            team_stats_for.field_goals_avg_yards = (ts["field_goals"].get("avg_yards"),)
+            team_stats_for.field_goals_longest = (ts["field_goals"].get("longest"),)
+            team_stats_for.field_goals_missed = (ts["field_goals"].get("missed"),)
+            team_stats_for.field_goals_pct = (ts["field_goals"].get("pct"),)
+            team_stats_for.field_goals_attempts_19 = (
+                ts["field_goals"].get("attempts_19"),
+            )
+            team_stats_for.field_goals_attempts_29 = (
+                ts["field_goals"].get("attempts_29"),
+            )
+            team_stats_for.field_goals_attempts_39 = (
+                ts["field_goals"].get("attempts_39"),
+            )
+            team_stats_for.field_goals_attempts_49 = (
+                ts["field_goals"].get("attempts_49"),
+            )
+            team_stats_for.field_goals_attempts_50 = (
+                ts["field_goals"].get("attempts_50"),
+            )
+            team_stats_for.field_goals_made_19 = (ts["field_goals"].get("made_19"),)
+            team_stats_for.field_goals_made_29 = (ts["field_goals"].get("made_29"),)
+            team_stats_for.field_goals_made_39 = (ts["field_goals"].get("made_39"),)
+            team_stats_for.field_goals_made_49 = (ts["field_goals"].get("made_49"),)
+            team_stats_for.field_goals_made_50 = (ts["field_goals"].get("made_50"),)
+        else:
+            team_stats_for.field_goals_attempts = None
+            team_stats_for.field_goals_made = None
+            team_stats_for.field_goals_blocked = None
+            team_stats_for.field_goals_yards = None
+            team_stats_for.field_goals_avg_yards = None
+            team_stats_for.field_goals_longest = None
+            team_stats_for.field_goals_missed = None
+            team_stats_for.field_goals_pct = None
+            team_stats_for.field_goals_attempts_19 = None
+            team_stats_for.field_goals_attempts_29 = None
+            team_stats_for.field_goals_attempts_39 = None
+            team_stats_for.field_goals_attempts_49 = None
+            team_stats_for.field_goals_attempts_50 = None
+            team_stats_for.field_goals_made_19 = None
+            team_stats_for.field_goals_made_29 = None
+            team_stats_for.field_goals_made_39 = None
+            team_stats_for.field_goals_made_49 = None
+            team_stats_for.field_goals_made_50 = None
+
+        if ts.get("punt_returns"):
+            team_stats_for.punt_returns_avg_yards = (
+                ts["punt_returns"].get("avg_yards"),
+            )
+            team_stats_for.punt_returns_yards = (ts["punt_returns"].get("yards"),)
+            team_stats_for.punt_returns_longest = (ts["punt_returns"].get("longest"),)
+            team_stats_for.punt_returns_touchdowns = (
+                ts["punt_returns"].get("touchdowns"),
+            )
+            team_stats_for.punt_returns_longest_touchdown = (
+                ts["punt_returns"].get("longest_touchdown"),
+            )
+            team_stats_for.punt_returns_faircatches = (
+                ts["punt_returns"].get("faircatches"),
+            )
+        else:
+            team_stats_for.punt_returns_avg_yards = None
+            team_stats_for.punt_returns_yards = None
+            team_stats_for.punt_returns_longest = None
+            team_stats_for.punt_returns_touchdowns = None
+            team_stats_for.punt_returns_longest_touchdown = None
+            team_stats_for.punt_returns_faircatches = None
+
+        if ts.get("punts"):
+            team_stats_for.punts_attempts = (ts["punts"].get("attempts"),)
+            team_stats_for.punts_yards = (ts["punts"].get("yards"),)
+            team_stats_for.punts_net_yards = (ts["punts"].get("net_yards"),)
+            team_stats_for.punts_blocked = (ts["punts"].get("blocked"),)
+            team_stats_for.punts_touchbacks = (ts["punts"].get("touchbacks"),)
+            team_stats_for.punts_inside_20 = (ts["punts"].get("inside_20"),)
+            team_stats_for.punts_return_yards = (ts["punts"].get("return_yards"),)
+            team_stats_for.punts_avg_net_yards = (ts["punts"].get("avg_net_yards"),)
+            team_stats_for.punts_avg_yards = (ts["punts"].get("avg_yards"),)
+            team_stats_for.punts_longest = (ts["punts"].get("longest"),)
+            team_stats_for.punts_hang_time = (ts["punts"].get("hang_time"),)
+            team_stats_for.punts_avg_hang_time = (ts["punts"].get("avg_hang_time"),)
+        else:
+            team_stats_for.punts_attempts = None
+            team_stats_for.punts_yards = None
+            team_stats_for.punts_net_yards = None
+            team_stats_for.punts_blocked = None
+            team_stats_for.punts_touchbacks = None
+            team_stats_for.punts_inside_20 = None
+            team_stats_for.punts_return_yards = None
+            team_stats_for.punts_avg_net_yards = None
+            team_stats_for.punts_avg_yards = None
+            team_stats_for.punts_longest = None
+            team_stats_for.punts_hang_time = None
+            team_stats_for.punts_avg_hang_time = None
+
+        if ts.get("extra_points"):
+            team_stats_for.extra_points_kicks_attempts = (
+                ts["extra_points"]["kicks"].get("attempts"),
+            )
+            team_stats_for.extra_points_kicks_blocked = (
+                ts["extra_points"]["kicks"].get("blocked"),
+            )
+            team_stats_for.extra_points_kicks_made = (
+                ts["extra_points"]["kicks"].get("made"),
+            )
+            team_stats_for.extra_points_kicks_pct = (
+                ts["extra_points"]["kicks"].get("pct"),
+            )
+            team_stats_for.extra_points_conversions_pass_attempts = (
+                ts["extra_points"]["conversions"].get("pass_attempts"),
+            )
+            team_stats_for.extra_points_conversions_pass_successes = (
+                ts["extra_points"]["conversions"].get("pass_successes"),
+            )
+            team_stats_for.extra_points_conversions_rush_attempts = (
+                ts["extra_points"]["conversions"].get("rush_attempts"),
+            )
+            team_stats_for.extra_points_conversions_rush_successes = (
+                ts["extra_points"]["conversions"].get("rush_successes"),
+            )
+            team_stats_for.extra_points_conversions_defense_attempts = (
+                ts["extra_points"]["conversions"].get("defense_attempts"),
+            )
+            team_stats_for.extra_points_conversions_defense_successes = (
+                ts["extra_points"]["conversions"].get("defense_successes"),
+            )
+            team_stats_for.extra_points_conversions_turnover_successes = (
+                ts["extra_points"]["conversions"].get("turnover_successes"),
+            )
+        else:
+            team_stats_for.extra_points_kicks_attempts = None
+            team_stats_for.extra_points_kicks_blocked = None
+            team_stats_for.extra_points_kicks_made = None
+            team_stats_for.extra_points_kicks_pct = None
+            team_stats_for.extra_points_conversions_pass_attempts = None
+            team_stats_for.extra_points_conversions_pass_successes = None
+            team_stats_for.extra_points_conversions_rush_attempts = None
+            team_stats_for.extra_points_conversions_rush_successes = None
+            team_stats_for.extra_points_conversions_defense_attempts = None
+            team_stats_for.extra_points_conversions_defense_successes = None
+            team_stats_for.extra_points_conversions_turnover_successes = None
+
+        # season stats of opponents against team
         os = team_stats["opponents"]
         team_stats_opponent = TeamSeasonStats(
             team_id=team_id_db,
             team_api_id=team_api_id,
             season_type=season_type,
             season_year=season_year,
-            isoponentstats=True,
+            is_opponent_stats=True,
             games_played=os.get("games_played"),
             touchdown_passes=os["touchdowns"].get("pass"),
             touchdown_rushes=os["touchdowns"].get("rush"),
@@ -302,24 +452,6 @@ async def fetch_team_season_stats(season_year: int, season_type: str):
             receiving_dropped_passes=os["receiving"].get("dropped_passes"),
             receiving_catchable_passes=os["receiving"].get("catchable_passes"),
             receiving_yards_after_contact=os["receiving"].get("yards_after_contact"),
-            punts_attempts=os["punts"].get("attempts"),
-            punts_yards=os["punts"].get("yards"),
-            punts_net_yards=os["punts"].get("net_yards"),
-            punts_blocked=os["punts"].get("blocked"),
-            punts_touchbacks=os["punts"].get("touchbacks"),
-            punts_inside_20=os["punts"].get("inside_20"),
-            punts_return_yards=os["punts"].get("return_yards"),
-            punts_avg_net_yards=os["punts"].get("avg_net_yards"),
-            punts_avg_yards=os["punts"].get("avg_yards"),
-            punts_longest=os["punts"].get("longest"),
-            punts_hang_time=os["punts"].get("hang_time"),
-            punts_avg_hang_time=os["punts"].get("avg_hang_time"),
-            punt_returns_avg_yards=os["punt_returns"].get("avg_yards"),
-            punt_returns_yards=os["punt_returns"].get("yards"),
-            punt_returns_longest=os["punt_returns"].get("longest"),
-            punt_returns_touchdowns=os["punt_returns"].get("touchdowns"),
-            punt_returns_longest_touchdown=os["punt_returns"].get("longest_touchdown"),
-            punt_returns_faircatches=os["punt_returns"].get("faircatches"),
             penalties_penalties=os["penalties"].get("penalties"),
             penalties_yards=os["penalties"].get("yards"),
             passing_attempts=os["passing"].get("attempts"),
@@ -361,54 +493,10 @@ async def fetch_team_season_stats(season_year: int, season_type: str):
             kickoffs_onside_successes=os["kickoffs"].get("onside_successes"),
             kickoffs_onside_attempts=os["kickoffs"].get("onside_attempts"),
             kickoffs_squib_kicks=os["kickoffs"].get("squib_kicks"),
-            kick_returns_avg_yards=os["kick_returns"].get("avg_yards"),
-            kick_returns_yards=os["kick_returns"].get("yards"),
-            kick_returns_longest=os["kick_returns"].get("longest"),
-            kick_returns_touchdowns=os["kick_returns"].get("touchdowns"),
-            kick_returns_longest_touchdown=os["kick_returns"].get("longest_touchdown"),
-            kick_returns_faircatches=os["kick_returns"].get("faircatches"),
-            kick_returns_returns=os["kick_returns"].get("returns"),
-            interceptions_return_yards=os["interceptions"].get("return_yards"),
-            interceptions_returned=os["interceptions"].get("returned"),
-            interceptions_interceptions=os["interceptions"].get("interceptions"),
-            int_returns_avg_yards=os["int_returns"].get("avg_yards"),
-            int_returns_yards=os["int_returns"].get("yards"),
-            int_returns_longest=os["int_returns"].get("longest"),
-            int_returns_touchdowns=os["int_returns"].get("touchdowns"),
-            int_returns_longest_touchdown=os["int_returns"].get("longest_touchdown"),
-            int_returns_returns=os["int_returns"].get("returns"),
-            fumbles_fumbles=os["fumbles"].get("fumbles"),
-            fumbles_lost_fumbles=os["fumbles"].get("lost_fumbles"),
-            fumbles_own_rec=os["fumbles"].get("own_rec"),
-            fumbles_own_rec_yards=os["fumbles"].get("own_rec_yards"),
-            fumbles_opp_rec=os["fumbles"].get("opp_rec"),
-            fumbles_out_of_bounds=os["fumbles"].get("out_of_bounds"),
-            fumbles_forced_fumbles=os["fumbles"].get("forced_fumbles"),
-            fumbles_own_rec_tds=os["fumbles"].get("own_rec_tds"),
-            fumbles_opp_rec_tds=os["fumbles"].get("opp_rec_tds"),
-            fumbles_ez_rec_tds=os["fumbles"].get("ez_rec_tds"),
             first_downs_pass=os["first_downs"].get("pass"),
             first_downs_penalty=os["first_downs"].get("penalty"),
             first_downs_rush=os["first_downs"].get("rush"),
             first_downs_total=os["first_downs"].get("total"),
-            field_goals_attempts=os["field_goals"].get("attempts"),
-            field_goals_made=os["field_goals"].get("made"),
-            field_goals_blocked=os["field_goals"].get("blocked"),
-            field_goals_yards=os["field_goals"].get("yards"),
-            field_goals_avg_yards=os["field_goals"].get("avg_yards"),
-            field_goals_longest=os["field_goals"].get("longest"),
-            field_goals_missed=os["field_goals"].get("missed"),
-            field_goals_pct=os["field_goals"].get("pct"),
-            field_goals_attempts_19=os["field_goals"].get("attempts_19"),
-            field_goals_attempts_29=os["field_goals"].get("attempts_29"),
-            field_goals_attempts_39=os["field_goals"].get("attempts_39"),
-            field_goals_attempts_49=os["field_goals"].get("attempts_49"),
-            field_goals_attempts_50=os["field_goals"].get("attempts_50"),
-            field_goals_made_19=os["field_goals"].get("made_19"),
-            field_goals_made_29=os["field_goals"].get("made_29"),
-            field_goals_made_39=os["field_goals"].get("made_39"),
-            field_goals_made_49=os["field_goals"].get("made_49"),
-            field_goals_made_50=os["field_goals"].get("made_50"),
             defence_tackles=os["defense"].get("tackles"),
             defence_assists=os["defense"].get("assists"),
             defence_combined=os["defense"].get("combined"),
@@ -440,31 +528,6 @@ async def fetch_team_season_stats(season_year: int, season_type: str):
             defence_batted_passes=os["defense"].get("batted_passes"),
             defence_three_and_outs_forced=os["defense"].get("three_and_outs_forced"),
             defence_fourth_down_stops=os["defense"].get("fourth_down_stops"),
-            extra_points_kicks_attempts=os["extra_points"]["kicks"].get("attempts"),
-            extra_points_kicks_blocked=os["extra_points"]["kicks"].get("blocked"),
-            extra_points_kicks_made=os["extra_points"]["kicks"].get("made"),
-            extra_points_kicks_pct=os["extra_points"]["kicks"].get("pct"),
-            extra_points_conversions_pass_attempts=os["extra_points"][
-                "conversions"
-            ].get("pass_attempts"),
-            extra_points_conversions_pass_successes=os["extra_points"][
-                "conversions"
-            ].get("pass_successes"),
-            extra_points_conversions_rush_attempts=os["extra_points"][
-                "conversions"
-            ].get("rush_attempts"),
-            extra_points_conversions_rush_successes=os["extra_points"][
-                "conversions"
-            ].get("rush_successes"),
-            extra_points_conversions_defense_attempts=os["extra_points"][
-                "conversions"
-            ].get("defense_attempts"),
-            extra_points_conversions_defense_successes=os["extra_points"][
-                "conversions"
-            ].get("defense_successes"),
-            extra_points_conversions_turnover_successes=os["extra_points"][
-                "conversions"
-            ].get("turnover_successes"),
             efficiency_goaltogo_attempts=os["efficiency"]["goaltogo"].get("attempts"),
             efficiency_goaltogo_successes=os["efficiency"]["goaltogo"].get("successes"),
             efficiency_goaltogo_pct=os["efficiency"]["goaltogo"].get("pct"),
@@ -484,11 +547,289 @@ async def fetch_team_season_stats(season_year: int, season_type: str):
             ),
             efficiency_fourthdown_pct=os["efficiency"]["fourthdown"].get("pct"),
         )
+
+        # controlling for stats that might not exist during playoff games
+        if os.get("interceptions"):
+            team_stats_opponent.interceptions_return_yards = os.get(
+                "interceptions"
+            ).get("return_yards")
+            team_stats_opponent.interceptions_returned = os.get("interceptions").get(
+                "returned"
+            )
+            team_stats_opponent.interceptions_interceptions = os.get(
+                "interceptions"
+            ).get("interceptions")
+        else:
+            team_stats_opponent.interceptions_return_yards = None
+            team_stats_opponent.interceptions_returned = None
+            team_stats_opponent.interceptions_interceptions = None
+
+        if os.get("int_returns"):
+            team_stats_opponent.int_returns_avg_yards = (
+                os["int_returns"].get("avg_yards"),
+            )
+            team_stats_opponent.int_returns_yards = (os["int_returns"].get("yards"),)
+            team_stats_opponent.int_returns_longest = (
+                os["int_returns"].get("longest"),
+            )
+            team_stats_opponent.int_returns_touchdowns = (
+                os["int_returns"].get("touchdowns"),
+            )
+            team_stats_opponent.int_returns_longest_touchdown = (
+                os["int_returns"].get("longest_touchdown"),
+            )
+            team_stats_opponent.int_returns_returns = (
+                os["int_returns"].get("returns"),
+            )
+        else:
+            team_stats_opponent.int_returns_avg_yards = None
+            team_stats_opponent.int_returns_yards = None
+            team_stats_opponent.int_returns_longest = None
+            team_stats_opponent.int_returns_touchdowns = None
+            team_stats_opponent.int_returns_longest_touchdown = None
+            team_stats_opponent.int_returns_returns = None
+
+        if os.get("kick_returns"):
+            team_stats_opponent.kick_returns_avg_yards = (
+                os["kick_returns"].get("avg_yards"),
+            )
+            team_stats_opponent.kick_returns_yards = (os["kick_returns"].get("yards"),)
+            team_stats_opponent.kick_returns_longest = (
+                os["kick_returns"].get("longest"),
+            )
+            team_stats_opponent.kick_returns_touchdowns = (
+                os["kick_returns"].get("touchdowns"),
+            )
+            team_stats_opponent.kick_returns_longest_touchdown = (
+                os["kick_returns"].get("longest_touchdown"),
+            )
+            team_stats_opponent.kick_returns_faircatches = (
+                os["kick_returns"].get("faircatches"),
+            )
+            team_stats_opponent.kick_returns_returns = (
+                os["kick_returns"].get("returns"),
+            )
+        else:
+            team_stats_opponent.kick_returns_avg_yards = None
+            team_stats_opponent.kick_returns_yards = None
+            team_stats_opponent.kick_returns_longest = None
+            team_stats_opponent.kick_returns_touchdowns = None
+            team_stats_opponent.kick_returns_longest_touchdown = None
+            team_stats_opponent.kick_returns_faircatches = None
+            team_stats_opponent.kick_returns_returns = None
+
+        if os.get("fumbles"):
+            team_stats_opponent.fumbles_fumbles = (os["fumbles"].get("fumbles"),)
+            team_stats_opponent.fumbles_lost_fumbles = (
+                os["fumbles"].get("lost_fumbles"),
+            )
+            team_stats_opponent.fumbles_own_rec = (os["fumbles"].get("own_rec"),)
+            team_stats_opponent.fumbles_own_rec_yards = (
+                os["fumbles"].get("own_rec_yards"),
+            )
+            team_stats_opponent.fumbles_opp_rec = (os["fumbles"].get("opp_rec"),)
+            team_stats_opponent.fumbles_out_of_bounds = (
+                os["fumbles"].get("out_of_bounds"),
+            )
+            team_stats_opponent.fumbles_forced_fumbles = (
+                os["fumbles"].get("forced_fumbles"),
+            )
+            team_stats_opponent.fumbles_own_rec_tds = (
+                os["fumbles"].get("own_rec_tds"),
+            )
+            team_stats_opponent.fumbles_opp_rec_tds = (
+                os["fumbles"].get("opp_rec_tds"),
+            )
+            team_stats_opponent.fumbles_ez_rec_tds = (os["fumbles"].get("ez_rec_tds"),)
+        else:
+            team_stats_opponent.fumbles_fumbles = None
+            team_stats_opponent.fumbles_lost_fumbles = None
+            team_stats_opponent.fumbles_own_rec = None
+            team_stats_opponent.fumbles_own_rec_yards = None
+            team_stats_opponent.fumbles_opp_rec = None
+            team_stats_opponent.fumbles_out_of_bounds = None
+            team_stats_opponent.fumbles_forced_fumbles = None
+            team_stats_opponent.fumbles_own_rec_tds = None
+            team_stats_opponent.fumbles_opp_rec_tds = None
+            team_stats_opponent.fumbles_ez_rec_tds = None
+
+        if os.get("field_goals"):
+            team_stats_opponent.field_goals_attempts = (
+                os["field_goals"].get("attempts"),
+            )
+            team_stats_opponent.field_goals_made = (os["field_goals"].get("made"),)
+            team_stats_opponent.field_goals_blocked = (
+                os["field_goals"].get("blocked"),
+            )
+            team_stats_opponent.field_goals_yards = (os["field_goals"].get("yards"),)
+            team_stats_opponent.field_goals_avg_yards = (
+                os["field_goals"].get("avg_yards"),
+            )
+            team_stats_opponent.field_goals_longest = (
+                os["field_goals"].get("longest"),
+            )
+            team_stats_opponent.field_goals_missed = (os["field_goals"].get("missed"),)
+            team_stats_opponent.field_goals_pct = (os["field_goals"].get("pct"),)
+            team_stats_opponent.field_goals_attempts_19 = (
+                os["field_goals"].get("attempts_19"),
+            )
+            team_stats_opponent.field_goals_attempts_29 = (
+                os["field_goals"].get("attempts_29"),
+            )
+            team_stats_opponent.field_goals_attempts_39 = (
+                os["field_goals"].get("attempts_39"),
+            )
+            team_stats_opponent.field_goals_attempts_49 = (
+                os["field_goals"].get("attempts_49"),
+            )
+            team_stats_opponent.field_goals_attempts_50 = (
+                os["field_goals"].get("attempts_50"),
+            )
+            team_stats_opponent.field_goals_made_19 = (
+                os["field_goals"].get("made_19"),
+            )
+            team_stats_opponent.field_goals_made_29 = (
+                os["field_goals"].get("made_29"),
+            )
+            team_stats_opponent.field_goals_made_39 = (
+                os["field_goals"].get("made_39"),
+            )
+            team_stats_opponent.field_goals_made_49 = (
+                os["field_goals"].get("made_49"),
+            )
+            team_stats_opponent.field_goals_made_50 = (
+                os["field_goals"].get("made_50"),
+            )
+        else:
+            team_stats_opponent.field_goals_attempts = None
+            team_stats_opponent.field_goals_made = None
+            team_stats_opponent.field_goals_blocked = None
+            team_stats_opponent.field_goals_yards = None
+            team_stats_opponent.field_goals_avg_yards = None
+            team_stats_opponent.field_goals_longest = None
+            team_stats_opponent.field_goals_missed = None
+            team_stats_opponent.field_goals_pct = None
+            team_stats_opponent.field_goals_attempts_19 = None
+            team_stats_opponent.field_goals_attempts_29 = None
+            team_stats_opponent.field_goals_attempts_39 = None
+            team_stats_opponent.field_goals_attempts_49 = None
+            team_stats_opponent.field_goals_attempts_50 = None
+            team_stats_opponent.field_goals_made_19 = None
+            team_stats_opponent.field_goals_made_29 = None
+            team_stats_opponent.field_goals_made_39 = None
+            team_stats_opponent.field_goals_made_49 = None
+            team_stats_opponent.field_goals_made_50 = None
+
+        if os.get("punt_returns"):
+
+            team_stats_opponent.punt_returns_avg_yards = (
+                os["punt_returns"].get("avg_yards"),
+            )
+            team_stats_opponent.punt_returns_yards = (os["punt_returns"].get("yards"),)
+            team_stats_opponent.punt_returns_longest = (
+                os["punt_returns"].get("longest"),
+            )
+            team_stats_opponent.punt_returns_touchdowns = (
+                os["punt_returns"].get("touchdowns"),
+            )
+            team_stats_opponent.punt_returns_longest_touchdown = (
+                os["punt_returns"].get("longest_touchdown"),
+            )
+            team_stats_opponent.punt_returns_faircatches = (
+                os["punt_returns"].get("faircatches"),
+            )
+        else:
+            team_stats_opponent.punt_returns_avg_yards = None
+            team_stats_opponent.punt_returns_yards = None
+            team_stats_opponent.punt_returns_longest = None
+            team_stats_opponent.punt_returns_touchdowns = None
+            team_stats_opponent.punt_returns_longest_touchdown = None
+            team_stats_opponent.punt_returns_faircatches = None
+
+        if os.get("punts"):
+            team_stats_opponent.punts_attempts = (os.get("punts").get("attempts"),)
+            team_stats_opponent.punts_yards = (os["punts"].get("yards"),)
+            team_stats_opponent.punts_net_yards = (os["punts"].get("net_yards"),)
+            team_stats_opponent.punts_blocked = (os["punts"].get("blocked"),)
+            team_stats_opponent.punts_touchbacks = (os["punts"].get("touchbacks"),)
+            team_stats_opponent.punts_inside_20 = (os["punts"].get("inside_20"),)
+            team_stats_opponent.punts_return_yards = (os["punts"].get("return_yards"),)
+            team_stats_opponent.punts_avg_net_yards = (
+                os["punts"].get("avg_net_yards"),
+            )
+            team_stats_opponent.punts_avg_yards = (os["punts"].get("avg_yards"),)
+            team_stats_opponent.punts_longest = (os["punts"].get("longest"),)
+            team_stats_opponent.punts_hang_time = (os["punts"].get("hang_time"),)
+            team_stats_opponent.punts_avg_hang_time = (
+                os["punts"].get("avg_hang_time"),
+            )
+        else:
+            team_stats_opponent.punts_attempts = None
+            team_stats_opponent.punts_yards = None
+            team_stats_opponent.punts_net_yards = None
+            team_stats_opponent.punts_blocked = None
+            team_stats_opponent.punts_touchbacks = None
+            team_stats_opponent.punts_inside_20 = None
+            team_stats_opponent.punts_return_yards = None
+            team_stats_opponent.punts_avg_net_yards = None
+            team_stats_opponent.punts_avg_yards = None
+            team_stats_opponent.punts_longest = None
+            team_stats_opponent.punts_hang_time = None
+            team_stats_opponent.punts_avg_hang_time = None
+
+        if ts.get("extra_points"):
+            team_stats_opponent.extra_points_kicks_attempts = (
+                os["extra_points"]["kicks"].get("attempts"),
+            )
+            team_stats_opponent.extra_points_kicks_blocked = (
+                os["extra_points"]["kicks"].get("blocked"),
+            )
+            team_stats_opponent.extra_points_kicks_made = (
+                os["extra_points"]["kicks"].get("made"),
+            )
+            team_stats_opponent.extra_points_kicks_pct = (
+                os["extra_points"]["kicks"].get("pct"),
+            )
+            team_stats_opponent.extra_points_conversions_pass_attempts = (
+                os["extra_points"]["conversions"].get("pass_attempts"),
+            )
+            team_stats_opponent.extra_points_conversions_pass_successes = (
+                os["extra_points"]["conversions"].get("pass_successes"),
+            )
+            team_stats_opponent.extra_points_conversions_rush_attempts = (
+                os["extra_points"]["conversions"].get("rush_attempts"),
+            )
+            team_stats_opponent.extra_points_conversions_rush_successes = (
+                os["extra_points"]["conversions"].get("rush_successes"),
+            )
+            team_stats_opponent.extra_points_conversions_defense_attempts = (
+                os["extra_points"]["conversions"].get("defense_attempts"),
+            )
+            team_stats_opponent.extra_points_conversions_defense_successes = (
+                os["extra_points"]["conversions"].get("defense_successes"),
+            )
+            team_stats_opponent.extra_points_conversions_turnover_successes = (
+                os["extra_points"]["conversions"].get("turnover_successes"),
+            )
+        else:
+            team_stats_opponent.extra_points_kicks_attempts = None
+            team_stats_opponent.extra_points_kicks_blocked = None
+            team_stats_opponent.extra_points_kicks_made = None
+            team_stats_opponent.extra_points_kicks_pct = None
+            team_stats_opponent.extra_points_conversions_pass_attempts = None
+            team_stats_opponent.extra_points_conversions_pass_successes = None
+            team_stats_opponent.extra_points_conversions_rush_attempts = None
+            team_stats_opponent.extra_points_conversions_rush_successes = None
+            team_stats_opponent.extra_points_conversions_defense_attempts = None
+            team_stats_opponent.extra_points_conversions_defense_successes = None
+            team_stats_opponent.extra_points_conversions_turnover_successes = None
+
         team_stats_final.append(team_stats_for)
         team_stats_final.append(team_stats_opponent)
     return team_stats_final
 
 
+# Run 3: Fill out team statistics per season and season type
 @router.post("/team_season_stats/{season_year}/{season_type}")
 async def batch_insert_season_team_statistics(season_year: int, season_type: str):
     # Batch insert the List[TeamSeasonStats] for a specific season type and year    #

@@ -1,10 +1,10 @@
 from typing import List
 
-from app.models.team_season_statistics import TeamSeasonStats
+from app.models.player_season_statistics import PlayerSeasonStats
 from app.db_context import sessionmaker
 
 
-async def bulk_insert_all_teams_season_stats(stats: List[TeamSeasonStats]):
+async def bulk_insert_all_player_season_stats(stats: List[PlayerSeasonStats]):
     with sessionmaker.begin() as session:
 
         try:
@@ -15,4 +15,4 @@ async def bulk_insert_all_teams_season_stats(stats: List[TeamSeasonStats]):
             print(f"Exception storing seasons: {ex}")
             raise Exception
 
-        return "Successfully save team season stats"
+        return "Successfully save all player season stats"

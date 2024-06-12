@@ -1,10 +1,11 @@
 import requests
 from fastapi import APIRouter
+
 from app.models.seasons import SeasonSchedule
 from app.repos.seasons import insert_season
+from app.db_context import API_KEY
 
 
-API_KEY = "QRIw08tTmh5eOtehVHnz59j7V5FUB7L55we4yoTX"
 MIN_SEASON_YEAR = 2018
 
 router = APIRouter(prefix="/api", tags=["Seasons"])

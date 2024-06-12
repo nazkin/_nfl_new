@@ -7,10 +7,10 @@ from app.db_context import get_db
 
 app = FastAPI()
 
-
-
 load_dotenv()
+
 get_db()
+
 app.include_router(team_and_player_general_routes)
 app.include_router(seasons_routes)
 app.include_router(team_season_stats_router)
