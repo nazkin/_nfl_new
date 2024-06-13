@@ -2,6 +2,7 @@ from typing import List
 
 from app.models.team_player import TeamPlayer
 from app.db_context import sessionmaker
+from sqlalchemy import select
 
 
 def insert_team_players(team_players: List[TeamPlayer]):
@@ -18,9 +19,11 @@ def insert_team_players(team_players: List[TeamPlayer]):
         return "success"
 
 
-async def fetch_player_by_api_id(api_id: str):
+async def get_player_by_api_id(api_id: str):
+    value: TeamPlayer = None
     with sessionmaker.begin() as session:
         session.expire_on_commit = False
-        return (
-            session.query(TeamPlayer).where(TeamPlayer.player_api_id == api_id).first()
-        )
+        stmt = select(TeamPlayer).where(TeamPlayer.player_api_id == api_id)
+
+        value = session.execute(stmt)
+    return value

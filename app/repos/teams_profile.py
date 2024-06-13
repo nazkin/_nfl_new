@@ -20,8 +20,7 @@ async def insert_team_profile(team: TeamsProfile):
     return id
 
 
-async def fetch_all_teams():
-
+def fetch_all_teams():
     with sessionmaker.begin() as session:
         session.expire_on_commit = False
         return session.query(TeamsProfile).where(TeamsProfile.id > 0).all()

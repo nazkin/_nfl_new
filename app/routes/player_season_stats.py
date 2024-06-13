@@ -5,7 +5,6 @@ from app.routes.team_and_players_general import (
     fetch_player_by_api_id,
 )
 from app.repos.player_season_stats import bulk_insert_all_player_season_stats
-from app.models.team_season_statistics import TeamSeasonStats
 from app.models.player_season_statistics import TeamPlayerStatsReturn, PlayerSeasonStats
 from app.db_context import API_KEY
 
@@ -15,19 +14,21 @@ router = APIRouter(prefix="/api", tags=["PlayerSeasonStats"])
 
 # Fetch Data from API
 @router.get("/player_season_stats/{season_year}/{season_type}")
-async def fetch_players_season_stats(
-    season_year: int, season_type: str
-) -> TeamPlayerStatsReturn:
+async def fetch_players_season_stats(season_year: int, season_type: str):
     # Fetch all the NFL teams from the api                         #
     # For each team we create custo, object for the team players  #
     # Return a List[TeamPlayer] and 2 other team identifies       #
 
-    all_teams = await fetch_all_nfl_teams_from_db()
+    teams = await fetch_all_nfl_teams_from_db()
     team_player_stats = []
-    for team in all_teams:
+    all_teams = []
+    all_teams.append(teams[0])
+    print(all_teams)
 
-        time.sleep(5)
-        url = f"https://api.sportradar.com/nfl/official/trial/v7/en/seasons/{season_year}/{season_type}/teams/{team_api_id}/statistics.json?api_key={API_KEY}"
+    for team in all_teams:
+        print(team.id, team.team_api_id)
+        #     time.sleep(5)
+        url = f"https://api.sportradar.com/nfl/official/trial/v7/en/seasons/{season_year}/{season_type}/teams/{team.team_api_id}/statistics.json?api_key={API_KEY}"
 
         headers = {"accept": "application/json"}
 
@@ -43,6 +44,7 @@ async def fetch_players_season_stats(
             "team_api_id": team.team_api_id,
             "player_stats": team_stats["players"],
         }
+        print(players_statistic_per_team)
         team_player_stats.append(players_statistic_per_team)
 
     return players_statistic_per_team
@@ -56,7 +58,7 @@ async def batch_fill_out_player_season_stats(season_year: int, season_type: str)
 
     for player in team_players_stats["player_stats"]:
         player_db = await fetch_player_by_api_id(player["id"])
-
+        
         # Player table model
         p_model = PlayerSeasonStats(
             player_id=player_db.id,
