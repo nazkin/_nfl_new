@@ -4,7 +4,7 @@ from app.models.team_season_statistics import TeamSeasonStats
 from app.db_context import sessionmaker
 
 
-async def bulk_insert_all_teams_season_stats(stats: List[TeamSeasonStats]):
+def bulk_insert_all_teams_season_stats(stats: List[TeamSeasonStats]):
     with sessionmaker.begin() as session:
 
         try:

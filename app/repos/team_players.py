@@ -19,11 +19,12 @@ def insert_team_players(team_players: List[TeamPlayer]):
         return "success"
 
 
-async def get_player_by_api_id(api_id: str):
-    value: TeamPlayer = None
+def get_player_by_api_id(api_id: str):
     with sessionmaker.begin() as session:
         session.expire_on_commit = False
-        stmt = select(TeamPlayer).where(TeamPlayer.player_api_id == api_id)
+        # stmt = select(TeamPlayer).where(TeamPlayer.player_api_id == api_id)
 
-        value = session.execute(stmt)
-    return value
+        # value = session.execute(stmt)
+        return (
+            session.query(TeamPlayer).where(TeamPlayer.player_api_id == api_id).first()
+        )

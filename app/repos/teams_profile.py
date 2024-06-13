@@ -4,7 +4,7 @@ from app.models.teams_profile import TeamsProfile
 from app.db_context import sessionmaker
 
 
-async def insert_team_profile(team: TeamsProfile):
+def insert_team_profile(team: TeamsProfile):
     id = None
     with sessionmaker.begin() as session:
         session.expire_on_commit = False

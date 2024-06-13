@@ -19,7 +19,7 @@ router = APIRouter(prefix="/api", tags=["Team and Players General"])
 router.get("/team_roster/{id}")
 
 
-async def fetch_team_roster(id: str):
+def fetch_team_roster(id: str):
     # Fetch team roster from API                            #
     #                                                       #
     # Return a dictionary                                   #
@@ -33,7 +33,7 @@ async def fetch_team_roster(id: str):
 
 
 @router.get("/teams")
-async def fetch_all_nfl_teams():
+def fetch_all_nfl_teams():
     # Fetch all nfl teams from API                          #
     #                                                       #
     # Return a dictionary                                   #
@@ -47,23 +47,23 @@ async def fetch_all_nfl_teams():
 
 
 @router.get("/teams_from_db")
-async def fetch_all_nfl_teams_from_db():
+def fetch_all_nfl_teams_from_db():
     # Fetch all nfl teams from DB                           #
     #                                                       #
     # Return a List[TeamsProfile] needed to fetch PK        #
 
-    all_teams = await fetch_all_teams()
+    all_teams = fetch_all_teams()
     return all_teams
 
 
 @router.get("/team_player/{api_id}")
-async def fetch_player_by_api_id(api_id: str):
-    player = await get_player_by_api_id(api_id)
+def fetch_player_by_api_id(api_id: str):
+    player = get_player_by_api_id(api_id)
     return player
 
 
 @router.post("/team_player/{id}")
-async def insert_team_players(id: int, inserted_team_api_id: str, players: List):
+def insert_team_players(id: int, inserted_team_api_id: str, players: List):
     # Inser team Players into db                         #
     # Used by fill_out_all_team_rosters                   #
     # Return a List[TeamsProfile] needed to fetch PK        #
@@ -99,11 +99,11 @@ async def insert_team_players(id: int, inserted_team_api_id: str, players: List)
 
 # Run 2: Fill_Out_team_rosters and team_players for each team
 @router.post("/team/{id}")
-async def fill_out_all_team_rosters(id):
+def fill_out_all_team_rosters(id):
     # Fill out general teams and rosters of teams          #
     #  Process: Plug in each team id into post URL 1 by 1  #
     # Returns a custom dict signifying stuff was inserted   #
-    tp = await fetch_team_roster(id)
+    tp = fetch_team_roster(id)
     players = tp["players"]
 
     if id != tp["id"]:
@@ -131,14 +131,14 @@ async def fill_out_all_team_rosters(id):
         venue_state=tp["venue"]["state"],
     )
     try:
-        inserted_team_id = await insert_team_profile(teams_profile)
+        inserted_team_id = insert_team_profile(teams_profile)
     except Exception as ex:
         print(f"Could not insert team {teams_profile.name}: {ex}")
         raise Exception
 
     # Inserting players in bulk
     try:
-        inserted_teams_players = await insert_team_players(
+        inserted_teams_players = insert_team_players(
             inserted_team_id, id, players=players
         )
     except Exception as ex:

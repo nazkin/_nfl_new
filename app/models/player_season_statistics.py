@@ -15,7 +15,7 @@ class TeamPlayerStatsReturn(BaseModel):
 
 
 class PlayerSeasonStats(Base):
-    __tablename__ = "team_season_stats"
+    __tablename__ = "player_season_stats"
     id = Column("id", Integer(), primary_key=True, autoincrement=True)
     player_id = Column("player_id", Integer)
     player_api_id = Column("player_api_id", String(225))
@@ -169,27 +169,6 @@ class PlayerSeasonStats(Base):
     extra_points_kicks_blocked = Column("extra_points_kicks_blocked", Integer())
     extra_points_kicks_made = Column("extra_points_kicks_made", Integer())
     extra_points_kicks_pct = Column("extra_points_kicks_pct", Float())
-    extra_points_conversions_pass_attempts = Column(
-        "extra_points_conversions_pass_attempts", Integer()
-    )
-    extra_points_conversions_pass_successes = Column(
-        "extra_points_conversions_pass_successes", Integer()
-    )
-    extra_points_conversions_rush_attempts = Column(
-        "extra_points_conversions_rush_attempts", Integer()
-    )
-    extra_points_conversions_rush_successes = Column(
-        "extra_points_conversions_rush_successes", Integer()
-    )
-    extra_points_conversions_defense_attempts = Column(
-        "extra_points_conversions_defense_attempts", Integer()
-    )
-    extra_points_conversions_defense_successes = Column(
-        "extra_points_conversions_defense_successes", Integer()
-    )
-    extra_points_conversions_turnover_successes = Column(
-        "extra_points_conversions_turnover_successes", Integer()
-    )
     conversions_pass_attempts = Column("conversions_pass_attempts", Integer())
     conversions_pass_successes = Column("conversions_pass_successes", Integer())
     conversions_rush_attempts = Column("conversions_rush_attempts", Integer())

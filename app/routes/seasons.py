@@ -12,7 +12,7 @@ router = APIRouter(prefix="/api", tags=["Seasons"])
 
 
 @router.get("/seasons")
-async def fetch_seasons():
+def fetch_seasons():
     # Fetch seasons data from api #
     # Used by post_seasons_to_db  #
     # Return a dict               #
@@ -26,11 +26,11 @@ async def fetch_seasons():
 
 # RUN 1: Fill-OUT ALL SEASONS
 @router.post("/seasons")
-async def post_seasons_to_db():
+def post_seasons_to_db():
     # Add all available seasons to db            #
     #                                            #
     # Returns "Success" when its successful      #
-    data = await fetch_seasons()
+    data = fetch_seasons()
     needed_seasons = []
     for season in data["seasons"]:
         if season["year"] > MIN_SEASON_YEAR:

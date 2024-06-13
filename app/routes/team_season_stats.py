@@ -10,12 +10,12 @@ router = APIRouter(prefix="/api", tags=["TeamSeasonStats"])
 
 # Fetch Data from API
 @router.get("/team_season_stats/{season_year}/{season_type}")
-async def fetch_team_season_stats(season_year: int, season_type: str):
+def fetch_team_season_stats(season_year: int, season_type: str):
     # Fetch all the NFL teams from the api                                          #
     # For each team we create TeamSeasonStats object for the team and its oponents  #
     # Return a List[TeamSeasonStats] to bulk insert it in a different route         #
 
-    all_teams = await fetch_all_nfl_teams_from_db()
+    all_teams = fetch_all_nfl_teams_from_db()
     team_stats_final = []
     for team in all_teams:
         team_id_db = team.id
@@ -831,21 +831,21 @@ async def fetch_team_season_stats(season_year: int, season_type: str):
 
 # Run 3: Fill out team statistics per season and season type
 @router.post("/team_season_stats/{season_year}/{season_type}")
-async def batch_insert_season_team_statistics(season_year: int, season_type: str):
+def batch_insert_season_team_statistics(season_year: int, season_type: str):
     # Batch insert the List[TeamSeasonStats] for a specific season type and year    #
     #                                                                               #
     # Return a success string to signify successful entry                           #
 
     all_teams_season_stats = []
     try:
-        all_teams_season_stats = await fetch_team_season_stats(season_year, season_type)
+        all_teams_season_stats = fetch_team_season_stats(season_year, season_type)
     except Exception as ex:
         print(
             f"Could not fetch season stats for teams of {season_year}-{season_type}: {ex}"
         )
         raise Exception
     try:
-        insert_value = await bulk_insert_all_teams_season_stats(all_teams_season_stats)
+        insert_value = bulk_insert_all_teams_season_stats(all_teams_season_stats)
     except Exception as ex:
         print(
             f"Could not fetch season stats for teams of {season_year}-{season_type}: {ex}"
