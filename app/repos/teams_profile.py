@@ -24,3 +24,13 @@ def fetch_all_teams():
     with sessionmaker.begin() as session:
         session.expire_on_commit = False
         return session.query(TeamsProfile).where(TeamsProfile.id > 0).all()
+
+
+def fetch_team_from_db_by_api_id(api_id: str) -> TeamsProfile:
+    with sessionmaker.begin() as session:
+        session.expire_on_commit = False
+        return (
+            session.query(TeamsProfile)
+            .where(TeamsProfile.team_api_id == api_id)
+            .first()
+        )

@@ -5,7 +5,11 @@ from typing import List
 
 from app.models.teams_profile import TeamsProfile
 from app.models.team_player import TeamPlayer
-from app.repos.teams_profile import insert_team_profile, fetch_all_teams
+from app.repos.teams_profile import (
+    insert_team_profile,
+    fetch_all_teams,
+    fetch_team_from_db_by_api_id,
+)
 from app.repos.team_players import (
     insert_team_players as repo_insert_team,
     get_player_by_api_id,
@@ -54,6 +58,16 @@ def fetch_all_nfl_teams_from_db():
 
     all_teams = fetch_all_teams()
     return all_teams
+
+
+@router.get("/teams_from_db/{api_id}")
+def fetch_team_by_api_id(api_id):
+    # Fetch all nfl teams from DB                           #
+    #                                                       #
+    # Return a List[TeamsProfile] needed to fetch PK        #
+
+    team = fetch_team_from_db_by_api_id(api_id)
+    return team
 
 
 @router.get("/team_player/{api_id}")
