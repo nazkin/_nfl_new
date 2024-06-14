@@ -3,7 +3,12 @@ from typing import List
 from fastapi import APIRouter
 
 from app.models.season_game import SeasonGame
-from app.repos.games import bulk_insert_season_games
+from app.repos.games import (
+    bulk_insert_season_games,
+    get_game_by_api_id,
+    get_all_games_from_db,
+    get_all_games_by_season_year,
+)
 from app.routes.team_and_players_general import fetch_team_by_api_id
 from app.db_context import API_KEY
 
@@ -11,6 +16,22 @@ from app.db_context import API_KEY
 MIN_SEASON_YEAR = 2018
 
 router = APIRouter(prefix="/api", tags=["games"])
+
+
+@router.get("/games")
+def fetch_all_games_from_db():
+    return get_all_games_from_db()
+
+
+@router.get("/games/by_api_id/{api_id}")
+def fetch_game_by_api_id(api_id: str):
+    return get_game_by_api_id(api_id)
+
+
+@router.get("/games/by_season_year/{season_year}")
+def fetch_games_by_seaon_year(season_year: int):
+    games = get_all_games_by_season_year(season_year)
+    return games
 
 
 @router.get("/games/{season_year}/{season_type}")

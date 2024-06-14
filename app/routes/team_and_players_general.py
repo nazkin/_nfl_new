@@ -20,9 +20,7 @@ from app.db_context import API_KEY
 router = APIRouter(prefix="/api", tags=["Team and Players General"])
 
 
-router.get("/team_roster/{id}")
-
-
+@router.get("/team_roster/{id}")
 def fetch_team_roster(id: str):
     # Fetch team roster from API                            #
     #                                                       #
@@ -112,7 +110,7 @@ def insert_team_players(id: int, inserted_team_api_id: str, players: List):
 
 
 # Run 2: Fill_Out_team_rosters and team_players for each team
-@router.post("/team/{id}")
+@router.post("/teams/{id}")
 def fill_out_all_team_rosters(id):
     # Fill out general teams and rosters of teams          #
     #  Process: Plug in each team id into post URL 1 by 1  #
