@@ -8,6 +8,7 @@ Base = declarative_base()
 
 
 class TeamSeasonStats(Base):
+
     __tablename__ = "team_season_stats"
     id = Column("id", Integer(), primary_key=True, autoincrement=True)
     team_id = Column("team_id", Integer)

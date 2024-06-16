@@ -2,9 +2,8 @@ import requests, time
 from fastapi import APIRouter
 from typing import List
 
-
 from app.models.teams_profile import TeamsProfile
-from app.models.team_player import TeamPlayer
+from app.models.team_player import TeamPlayer, IncompletePlayerBody
 from app.repos.teams_profile import (
     insert_team_profile,
     fetch_all_teams,
@@ -13,15 +12,16 @@ from app.repos.teams_profile import (
 from app.repos.team_players import (
     insert_team_players as repo_insert_team,
     get_player_by_api_id,
+    insert_one_team_player_db,
 )
 from app.db_context import API_KEY
 
 
-router = APIRouter(prefix="/api", tags=["Team and Players General"])
+router = APIRouter(prefix="/api/team_and_player", tags=["Team and Players General"])
 
 
 @router.get("/team_roster/{id}")
-def fetch_team_roster(id: str):
+def fetch_team_roster_api(id: str):
     # Fetch team roster from API                            #
     #                                                       #
     # Return a dictionary                                   #
@@ -75,7 +75,7 @@ def fetch_player_by_api_id(api_id: str):
 
 
 @router.post("/team_player/{id}")
-def insert_team_players(id: int, inserted_team_api_id: str, players: List):
+def insert_team_players(id: int, team_api_id: str, players: List):
     # Inser team Players into db                         #
     # Used by fill_out_all_team_rosters                   #
     # Return a List[TeamsProfile] needed to fetch PK        #
@@ -87,14 +87,19 @@ def insert_team_players(id: int, inserted_team_api_id: str, players: List):
             birth_date=str(player.get("birth_date")),
             weight=player.get("weight"),
             height=player.get("height"),
-            main_position=player.get("main_position"),
+            main_position=player.get("position"),
             birth_place=player.get("birth_place"),
             rookie_year=player.get("rookie_year") or None,
             status=player.get("status"),
             experience=player.get("experience"),
-            team_api_id=inserted_team_api_id,
+            team_api_id=team_api_id,
             team_id=id,
         )
+        if player.get("draft"):
+            player_to_insert.draft_year = player.get("draft").get("year")
+            player_to_insert.draft_round = player.get("draft").get("round")
+            player_to_insert.draft_number = player.get("draft").get("round")
+
         player_list_to_insert.append(player_to_insert)
 
     # Pass the values to repo layer for a bulk insert
@@ -110,50 +115,60 @@ def insert_team_players(id: int, inserted_team_api_id: str, players: List):
 
 
 # Run 2: Fill_Out_team_rosters and team_players for each team
-@router.post("/teams/{id}")
-def fill_out_all_team_rosters(id):
+@router.post("/teams/{team_api_id}")
+def fill_out_a_team_roster(team_api_id, db_team_id=None):
     # Fill out general teams and rosters of teams          #
     #  Process: Plug in each team id into post URL 1 by 1  #
     # Returns a custom dict signifying stuff was inserted   #
-    tp = fetch_team_roster(id)
+    tp = fetch_team_roster_api(team_api_id)
     players = tp["players"]
 
-    if id != tp["id"]:
+    if team_api_id != tp["id"]:
         print("WRONG ID PASSED TO FILL A TEAM")
         return
 
-    # Inserting team
-    teams_profile = TeamsProfile(
-        team_api_id=id,
-        name=tp["name"],
-        alias=tp["alias"],
-        market=tp["market"],
-        founded=tp["founded"],
-        championships_won=tp["championships_won"],
-        conference_titles=tp["conference_titles"],
-        division_titles=tp["division_titles"],
-        playoff_appearances=tp["playoff_appearances"],
-        division_name=tp["division"]["name"],
-        conference_name=tp["conference"]["name"],
-        venue_name=tp["venue"]["name"],
-        venue_api_id=tp["venue"]["id"],
-        venue_roof_type=tp["venue"]["roof_type"],
-        venue_surface=tp["venue"]["surface"],
-        venue_city=tp["venue"]["city"],
-        venue_state=tp["venue"]["state"],
-    )
-    try:
-        inserted_team_id = insert_team_profile(teams_profile)
-    except Exception as ex:
-        print(f"Could not insert team {teams_profile.name}: {ex}")
-        raise Exception
+    if not db_team_id:
+        db_team = fetch_team_by_api_id(team_api_id)
+        db_team_id = db_team.id
+
+    # Inserting team (Uncomment if you want to reinsert teams and rosters from scratch together)
+    # teams_profile = generate_teamprofile_model(tp, team_api_id)
+    # try:
+    #     inserted_team_id = insert_team_profile(teams_profile)
+    # except Exception as ex:
+    #     print(f"Could not insert team {teams_profile.name}: {ex}")
+    #     raise Exception
 
     # Inserting players in bulk
+
     try:
-        inserted_teams_players = insert_team_players(
-            inserted_team_id, id, players=players
+        inserted_team_players = insert_team_players(
+            db_team_id, team_api_id, players=players
         )
     except Exception as ex:
-        print(f"Could not batch insert team members{teams_profile.name}: {ex}")
+        print(f"Could not batch insert team members for team_id {db_team_id}: {ex}")
         raise Exception
-    return {"team_id": inserted_team_id, "InsertedPlayers": inserted_teams_players}
+    return {"team_id": db_team_id, "inserted_players": inserted_team_players}
+
+
+@router.post("/fill_out_all_teams_rosters")
+def fill_out_all_teams_rosters():
+    all_teams = fetch_all_nfl_teams_from_db()
+    for team in all_teams:
+        time.sleep(4)
+        response = fill_out_a_team_roster(team.team_api_id, team.id)
+        print(response)
+    return "Successfully filled all team rosters"
+
+
+# Insert team player one by one
+@router.post("/team_player")
+def insert_one_team_player(player: IncompletePlayerBody):
+    player_dict = player.model_dump(
+        mode="python", exclude_unset=True, exclude_none=True
+    )
+    try:
+        value = insert_one_team_player_db(player_dict)
+    except Exception as ex:
+        raise ex
+    return value

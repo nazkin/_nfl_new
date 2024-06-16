@@ -3,6 +3,9 @@ from sqlalchemy import Integer
 from sqlalchemy import String
 from sqlalchemy.ext.declarative import declarative_base
 
+from pydantic import BaseModel
+from typing import Union
+
 
 Base = declarative_base()
 
@@ -22,3 +25,15 @@ class TeamPlayer(Base):
     experience = Column("experience", Integer())
     team_api_id = Column("team_api_id", String(200))
     team_id = Column("team_id", Integer())
+    draft_year = Column("draft_year", Integer())
+    draft_round = Column("draft_round", Integer())
+    draft_number = Column("draft_number", Integer())
+
+
+# Used when inserting an incomplete player_body
+class IncompletePlayerBody(BaseModel):
+    player_api_id: str
+    full_name: str
+    main_position: str
+    team_api_id: str
+    team_id: int

@@ -8,7 +8,7 @@ class SeasonGame(Base):
     __tablename__ = "season_game"
 
     id = Column(Integer, primary_key=True)
-    game_api_id = Column(String(225), unique=True, nullable=False)
+    game_api_id = Column(String(225), unique=True, nullable=True)
     season_year = Column(Integer())
     season_type = Column(String())
     status = Column(String(225))

@@ -12,7 +12,7 @@ def batch_insert_team_game_stats(stats: List[TeamGameStats]):
             session.commit()
             session.flush()
         except Exception as ex:
-            print(f"Exception storing seasons: {ex}")
+            print(f"Exception storing team game stats: {ex}")
             raise Exception
 
         return "Successfully saved team stats for all games"

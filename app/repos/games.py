@@ -35,3 +35,25 @@ def get_all_games_by_season_year(year: int):
         session.expire_on_commit = False
         values = session.query(SeasonGame).where(SeasonGame.season_year == year).all()
         return values
+
+
+from sqlalchemy import update
+
+
+def update_game_weather(game: dict):
+    with sessionmaker.begin() as session:
+        stmt = (
+            update(SeasonGame)
+            .where(SeasonGame.game_api_id == game["game_api_id"])
+            .values(
+                humidity=game["humidity"],
+                temperature=game["temperature"],
+                wind_direction=game["wind_direction"],
+                wind_speed=game["wind_speed"],
+            )
+        )
+
+        session.execute(stmt)
+        session.commit()
+
+        return f"successfully updated game {game['game_api_id']}"

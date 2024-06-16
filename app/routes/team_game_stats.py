@@ -2,16 +2,16 @@ import requests, time
 from typing import List
 from fastapi import APIRouter
 
-from app.models.team_game_statistics import TeamGameStats
 from app.repos.team_game_stats import batch_insert_team_game_stats
 from app.routes.games import fetch_game_by_api_id, fetch_games_by_seaon_year
+from app.models.team_game_statistics import TeamGameStats
 from app.db_context import API_KEY
 from app.routes.utils.utils import generate_teamgamestat_model
 
 
 MIN_SEASON_YEAR = 2018
 
-router = APIRouter(prefix="/api", tags=["game_stats"])
+router = APIRouter(prefix="/api/team", tags=["game_stats"])
 
 
 @router.get("/game_stats/{game_api_id}")
@@ -29,11 +29,11 @@ def fetch_team_game_stats_api(game_api_id: str):
     season_year = data["summary"]["season"]["year"]
     season_type = data["summary"]["season"]["type"]
 
-    home_stats_model = generate_teamgamestat_model(
+    home_stats_model: TeamGameStats = generate_teamgamestat_model(
         general_game_db, home_stats, season_year, season_type, isHome=True
     )
 
-    away_stats_model = generate_teamgamestat_model(
+    away_stats_model: TeamGameStats = generate_teamgamestat_model(
         general_game_db, away_stats, season_year, season_type, isHome=False
     )
 
@@ -44,6 +44,7 @@ def fetch_team_game_stats_api(game_api_id: str):
 def insert_all_team_game_stats():
 
     try:
+        # ADD GAMES BY YEAR TO SAVE API RESOURCES
         all_games = fetch_games_by_seaon_year(2023)
     except Exception as ex:
         print(f"Could not fetch all games for batch insert")
@@ -56,4 +57,4 @@ def insert_all_team_game_stats():
         team_game_stats_list.append(team_game_stats["home_stats"])
         team_game_stats_list.append(team_game_stats["away_stats"])
 
-    return batch_insert_team_game_stats(team_game_stats)
+    return batch_insert_team_game_stats(team_game_stats_list)

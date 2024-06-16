@@ -15,4 +15,4 @@ def bulk_insert_all_player_season_stats(stats: List[PlayerSeasonStats]):
             print(f"Exception storing seasons: {ex}")
             raise Exception
 
-        return "Successfully save all player season stats"
+        return "Successfully saved all player season stats"
