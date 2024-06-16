@@ -1,8 +1,11 @@
 from app.models.player_game_statistics import PlayerGameStats
 from app.db_context import sessionmaker
-from sqlalchemy import insert
 
+# ON Conflict unique_key_index
+# DO UPDATE SET (col = value)
 
+# In sqlalchemy its
+# stmt = insert(model).on_conflict_do_update()
 def insert_player_game_stats(stats: PlayerGameStats):
     with sessionmaker.begin() as session:
 
