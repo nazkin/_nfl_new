@@ -22,13 +22,9 @@ def insert_team_players(team_players: List[TeamPlayer]):
 def get_player_by_api_id(api_id: str):
     with sessionmaker.begin() as session:
         session.expire_on_commit = False
-        # stmt = select(TeamPlayer).where(TeamPlayer.player_api_id == api_id)
-
-        # value = session.execute(stmt)
         return (
             session.query(TeamPlayer).where(TeamPlayer.player_api_id == api_id).first()
         )
-
 
 def insert_one_team_player_db(player: dict):
 

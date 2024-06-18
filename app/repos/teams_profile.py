@@ -1,5 +1,3 @@
-from typing import List
-
 from app.models.teams_profile import TeamsProfile
 from app.db_context import sessionmaker
 
@@ -18,7 +16,6 @@ def insert_team_profile(team: TeamsProfile):
             print(f"Exception storing team {team.name}: {ex}")
 
     return id
-
 
 def fetch_all_teams():
     with sessionmaker.begin() as session:

@@ -20,12 +20,12 @@ from app.db_context import API_KEY
 router = APIRouter(prefix="/api/team_and_player", tags=["Team and Players General"])
 
 
-@router.get("/team_roster/{id}")
-def fetch_team_roster_api(id: str):
+@router.get("/team_roster_api/{team_api_id}")
+def fetch_team_roster_api(team_api_id: str):
     # Fetch team roster from API                            #
     #                                                       #
     # Return a dictionary                                   #
-    url = f"https://api.sportradar.com/nfl/official/trial/v7/en/teams/{id}/full_roster.json?api_key={API_KEY}"
+    url = f"https://api.sportradar.com/nfl/official/trial/v7/en/teams/{team_api_id}/full_roster.json?api_key={API_KEY}"
 
     headers = {"accept": "application/json"}
 
@@ -34,7 +34,7 @@ def fetch_team_roster_api(id: str):
     return team_roster
 
 
-@router.get("/teams")
+@router.get("/all_teams_api")
 def fetch_all_nfl_teams():
     # Fetch all nfl teams from API                          #
     #                                                       #
@@ -48,7 +48,7 @@ def fetch_all_nfl_teams():
     return teams
 
 
-@router.get("/teams_from_db")
+@router.get("/all_teams_db")
 def fetch_all_nfl_teams_from_db():
     # Fetch all nfl teams from DB                           #
     #                                                       #
@@ -58,7 +58,7 @@ def fetch_all_nfl_teams_from_db():
     return all_teams
 
 
-@router.get("/teams_from_db/{api_id}")
+@router.get("/team_roster_db/{api_id}")
 def fetch_team_by_api_id(api_id):
     # Fetch all nfl teams from DB                           #
     #                                                       #
@@ -68,17 +68,19 @@ def fetch_team_by_api_id(api_id):
     return team
 
 
-@router.get("/team_player/{api_id}")
+@router.get("/team_player_db/{api_id}")
 def fetch_player_by_api_id(api_id: str):
+    # Fetch one team player from DB using API_ID key
+    # Return TeamPlayer model
     player = get_player_by_api_id(api_id)
     return player
 
 
-@router.post("/team_player/{id}")
-def insert_team_players(id: int, team_api_id: str, players: List):
-    # Inser team Players into db                         #
-    # Used by fill_out_all_team_rosters                   #
-    # Return a List[TeamsProfile] needed to fetch PK        #
+@router.post("/team_player/{team_id_db}")
+def insert_team_players(team_id_db: int, team_api_id: str, players: List):
+    # Inser team Players into db (Create a roster related to team)
+    # Used by fill_out_all_team_rosters
+    # Return a List[TeamsProfile] needed to fetch PK
     player_list_to_insert = []
     for player in players:
         player_to_insert = TeamPlayer(
@@ -93,7 +95,7 @@ def insert_team_players(id: int, team_api_id: str, players: List):
             status=player.get("status"),
             experience=player.get("experience"),
             team_api_id=team_api_id,
-            team_id=id,
+            team_id=team_id_db,
         )
         if player.get("draft"):
             player_to_insert.draft_year = player.get("draft").get("year")
@@ -114,12 +116,12 @@ def insert_team_players(id: int, team_api_id: str, players: List):
     return response
 
 
-# Run 2: Fill_Out_team_rosters and team_players for each team
-@router.post("/teams/{team_api_id}")
+
+@router.post("/all_team_data/{team_api_id}")
 def fill_out_a_team_roster(team_api_id, db_team_id=None):
     # Fill out general teams and rosters of teams          #
     #  Process: Plug in each team id into post URL 1 by 1  #
-    # Returns a custom dict signifying stuff was inserted   #
+    # Returns: All team data  #
     tp = fetch_team_roster_api(team_api_id)
     players = tp["players"]
 
@@ -132,6 +134,7 @@ def fill_out_a_team_roster(team_api_id, db_team_id=None):
         db_team_id = db_team.id
 
     # Inserting team (Uncomment if you want to reinsert teams and rosters from scratch together)
+    # We have all the teams stored so its not necessary if they are all stored anyways
     # teams_profile = generate_teamprofile_model(tp, team_api_id)
     # try:
     #     inserted_team_id = insert_team_profile(teams_profile)
@@ -150,7 +153,9 @@ def fill_out_a_team_roster(team_api_id, db_team_id=None):
         raise Exception
     return {"team_id": db_team_id, "inserted_players": inserted_team_players}
 
-
+# Run 2:(Option 1: If teams and team players are not stored in db yet) Fill_Out_team_rosters and team_players for each team
+# PS: for (option 2) Need to change code in fill_out_a_team_roster function to have it run as desired
+# Run 2: (Option 2 => The team list already exists in db so u just fill out players)
 @router.post("/fill_out_all_teams_rosters")
 def fill_out_all_teams_rosters():
     all_teams = fetch_all_nfl_teams_from_db()
@@ -162,6 +167,7 @@ def fill_out_all_teams_rosters():
 
 
 # Insert team player one by one
+# This route is to insert a player if we receive stats for it but he was not part of the roster for some reason
 @router.post("/team_player")
 def insert_one_team_player(player: IncompletePlayerBody):
     player_dict = player.model_dump(

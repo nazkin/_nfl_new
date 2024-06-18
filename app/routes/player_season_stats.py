@@ -5,7 +5,7 @@ from app.routes.team_and_players_general import (
     fetch_player_by_api_id,
 )
 from app.repos.player_season_stats import bulk_insert_all_player_season_stats
-from app.routes.utils.utils import generate_playerseasonstats_model
+from app.utils.utils import generate_playerseasonstats_model
 from app.db_context import API_KEY
 
 
@@ -13,7 +13,7 @@ router = APIRouter(prefix="/api/player", tags=["PlayerSeasonStats"])
 
 
 # Fetch Data from API for batch insert
-@router.get("/player_season_stats/{season_year}/{season_type}")
+@router.get("/season_stats/{season_year}/{season_type}")
 def fetch_players_season_stats(season_year: int, season_type: str):
     # Fetch all the NFL player season stats from the api for batch insertion#
     # For each team we create custo, object for the team player stats #
@@ -48,7 +48,7 @@ def fetch_players_season_stats(season_year: int, season_type: str):
 
 
 # Run 4: Fill out player stats for each team each season
-@router.post("/player_season_stats/{season_year}/{season_type}")
+@router.post("/season_stats/{season_year}/{season_type}")
 def batch_fill_out_player_season_stats(season_year: int, season_type: str):
     # Use "/player_season_stats/{season_year}/{season_type}" to get all player stats for each team #
     # Stats are fetched per season and season type "REG" or "PST" #

@@ -1,26 +1,26 @@
 import requests, time
-from typing import List
 from fastapi import APIRouter
 
-from app.repos.player_game_stats import insert_player_game_stats
-from app.routes.games import fetch_game_by_api_id, fetch_games_by_seaon_year
-from app.routes.team_and_players_general import fetch_player_by_api_id
-from app.models.team_game_statistics import TeamGameStats
-from app.db_context import API_KEY
-from app.routes.utils.utils import (
+from app.utils.utils import (
     organize_player_game_stats,
     generate_playergamestat_model,
 )
-from app.routes.utils.small_helpers import insert_non_existing_player
+from app.utils.small_helpers import insert_non_existing_player
+from app.routes.games import fetch_game_by_api_id, fetch_games_by_seaon_year
+from app.routes.team_and_players_general import fetch_player_by_api_id
+from app.db_context import API_KEY
+from app.repos.player_game_stats import insert_player_game_stats
 
 
-MIN_SEASON_YEAR = 2018
-
-router = APIRouter(prefix="/api/player", tags=["game_stats"])
+router = APIRouter(prefix="/api/player", tags=["player_game_stats"])
 
 
 @router.get("/game_stats/{game_api_id}")
 def fetch_player_game_stats_api(game_api_id: str):
+    # Fetch all player stats per game from an api
+    # Args: game_api_id -> game identifier in api
+    # Returns: List[PlayerGameStats] for home and away team combined
+
     url = f"https://api.sportradar.com/nfl/official/trial/v7/en/games/{game_api_id}/statistics.json?api_key={API_KEY}"
 
     headers = {"accept": "application/json"}
@@ -31,7 +31,12 @@ def fetch_player_game_stats_api(game_api_id: str):
     s_year = data["summary"]["season"]["year"]
     s_type = data["summary"]["season"]["type"]
 
+    if not data.get("statistics"):
+        print(f"could not find any game_statistics for game number {game_api_id}")
+        return []
+
     # data fetched from db needed for home and away teams models
+
     general_game_db = fetch_game_by_api_id(game_api_id)
     home_stats = organize_player_game_stats(
         data["statistics"]["home"], game_api_id, general_game_db, True, s_year, s_type
@@ -45,20 +50,23 @@ def fetch_player_game_stats_api(game_api_id: str):
     ]
     return all_games_stats_db
 
-
-@router.post("/game_stats")
-def insert_all_player_game_stats():
-
+# Run7 - Fill out all player game stats per season
+@router.post("/game_stats/{season_year}")
+def insert_all_player_game_stats_per_season_year(season_year: int):
+    # Insert all player game stats for a particular year
+    # Args: Season year
+    # Returns { type: "Success string", inserted_ids: List[int]}
     try:
         # ADD GAMES BY YEAR TO SAVE API RESOURCES
-        all_games_1 = fetch_games_by_seaon_year(2023)
+        # Year will include REG and PST seasons from database
+        all_games = fetch_games_by_seaon_year(season_year)
     except Exception as ex:
         print(f"Could not fetch all games for batch insert")
         raise Exception
     player_game_stats_list = []
-    all_games = all_games_1[0:1]
-    for game in all_games:
 
+    for game in all_games:
+        time.sleep(4)
         player_game_stats = fetch_player_game_stats_api(game.game_api_id)
         for player in player_game_stats:
             player_db = fetch_player_by_api_id(player.player_api_id)
@@ -69,8 +77,10 @@ def insert_all_player_game_stats():
                 player.player_id = insert_non_existing_player(player)
 
             player_game_stats_list.append(player)
-    for pg_stats in player_game_stats_list:
-        value = insert_player_game_stats(pg_stats)
-        print(value)
 
-    return "Kaboom"
+    inserted_ids = []
+    for pg_stats in player_game_stats_list:
+        inserted_data = insert_player_game_stats(pg_stats)
+        inserted_ids.append(inserted_data)
+
+    return {"type": "Success", "inserted_ids": inserted_ids}

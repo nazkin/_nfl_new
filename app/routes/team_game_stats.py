@@ -6,16 +6,16 @@ from app.repos.team_game_stats import batch_insert_team_game_stats
 from app.routes.games import fetch_game_by_api_id, fetch_games_by_seaon_year
 from app.models.team_game_statistics import TeamGameStats
 from app.db_context import API_KEY
-from app.routes.utils.utils import generate_teamgamestat_model
+from app.utils.utils import generate_teamgamestat_model
 
-
-MIN_SEASON_YEAR = 2018
 
 router = APIRouter(prefix="/api/team", tags=["game_stats"])
 
 
 @router.get("/game_stats/{game_api_id}")
 def fetch_team_game_stats_api(game_api_id: str):
+    # Fetch team stats for every game and convert them into out TeamGameStats data models
+    # Returns {homes_stats: List[TeamGameStats], away_stats: List[TeamGameStats],}
     url = f"https://api.sportradar.com/nfl/official/trial/v7/en/games/{game_api_id}/statistics.json?api_key={API_KEY}"
 
     headers = {"accept": "application/json"}
@@ -39,7 +39,7 @@ def fetch_team_game_stats_api(game_api_id: str):
 
     return {"home_stats": home_stats_model, "away_stats": away_stats_model}
 
-
+#Run 6: Fill out all team game stats for a particular season year
 @router.post("/game_stats/")
 def insert_all_team_game_stats():
 

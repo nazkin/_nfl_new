@@ -24,7 +24,7 @@ def fetch_seasons():
     return dict(response.json())
 
 
-# RUN 1: Fill-OUT ALL SEASONS
+# RUN 1: Mass insert all seasons that are to be used "REG" and "PST"
 @router.post("/seasons")
 def post_seasons_to_db():
     # Add all available seasons to db            #
