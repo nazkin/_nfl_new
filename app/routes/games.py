@@ -79,7 +79,7 @@ def batch_insert_seasonal_games(season_year: int, season_type: str):
         raise ex
 
     try:
-        res = bulk_insert_season_games(games_list)
+        res =  (games_list)
     except Exception as ex:
         print(
             f"Could not bulk insert games list for nfl season {season_year} {season_type} {ex}"
@@ -119,3 +119,12 @@ def update_games_data(season_year: int, season_type: str):
         res = update_game_weather(weather)
         print(res)
     return "Successfully updated a bunch of weather for games"
+
+@router.post("/new")
+def post_new_games(year: int, season_type: str):
+    # 1 - Fetch all games for a particular season api
+    # 2 - Fetch all games for particular year and season from db
+    # 3 - filter all games that currently do not exist in db
+    # 4 - Generate list of SeasonGame models to insert
+    # 5 - Bulk insert those new games
+    return "Success"
